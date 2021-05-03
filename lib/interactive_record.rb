@@ -27,9 +27,22 @@ class InteractiveRecord
   end
 
   def save
-    sql = "INSERT INTO #{table_name_for_insert} (#{col_names_for_insert}) VALUES (#{values_for_insert})"
-    DB[:conn].execute(sql)
-    @id = DB[:conn].execute("SELECT last_insert_rowid() FROM #{table_name_for_insert}")[0][0]
+    insert
+  end
+
+  def insert
+    sql = <<-SQL
+    INSERT INTO #{table_name_for_insert}
+    (#{col_names_for_insert.join(', ')})
+    VALUES (#{value_place})
+    SQL
+    DB[:conn].execute(sql, values_for_insert)
+    id = DB[:conn].execute("SELECE last_insert_rowid() FROM #{table_name_for_insert}")
+    self.id = id.first['last_insert_rowid()']
+  end
+
+  def value_place
+    (1..col_names_for_insert.size).map {'?'}.join(',')
   end
 
   def table_name_for_insert
